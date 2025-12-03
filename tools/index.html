@@ -2,27 +2,6 @@ Hre you can find my shit and tools and Tools by other people but improved.\
 
 The current Tools here are..
 
-<ul id="file-list"></ul>
-
-<script>
-async function listHTMLFiles() {
-    try {
-        const res = await fetch("./");
-        const text = await res.text();
-        const htmlFiles = [...text.matchAll(/href="([^"]+\.html)"/g)]
-            .map(m => m[1])
-            .filter(name => name !== "index.html");
-
-        const list = document.getElementById("file-list");
-        htmlFiles.forEach(file => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="${file}">${file}</a>`;
-            list.appendChild(li);
-        });
-    } catch (err) {
-        console.log("Error:", err);
-    }
-}
-
-listHTMLFiles();
-</script>
+<ul>
+  <li><a href="fnf2ays.html">fnf2ays.html</a></li>
+</ul>
