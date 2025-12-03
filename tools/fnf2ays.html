@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>FNF to AYS Converter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            background-color: #272727;
+            color: #fff;
+            font-family: monospace;
+            text-align: center;
+            font-size: large;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #container {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 30px;
+        }
+
+        #setup, #options {
+            background: rgba(255,255,255,0.07);
+            padding: 20px;
+            border-radius: 10px;
+            width: 320px;
+        }
+
+        h2, h3, h4 {
+            margin-top: 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #444;
+            color: white;
+            font-size: medium;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #444;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: medium;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .file-button:hover {
+            background-color: #555;
+        }
+
+        #file-name {
+            margin-top: 10px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        select {
+            margin-top: 10px;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        select:hover {
+            border-color: #777;
+        }
+
+        input[type="number"] {
+            margin-top: 10px;
+            width: 100%;
+        }
+    </style>
+
+    <script>
+        function convert() {
+            const startTime = Date.now();
+            const file = document.getElementById("input").files[0];
+
+            if (!file) {
+                alert("No file selected. Aborting.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = event => {
+                let parsed;
+                const raw = event.target.result;
+                const decimals = document.getElementById("decimal-digit").valueAsNumber;
+                const tag = document.getElementById("conversion").value.split(".");
+
+                try {
+                    parsed = JSON.parse(raw);
+                    if (!parsed.song || !parsed.song.notes) {
+                        throw new Error("JSON File is not a valid <0.7.3 Psych Engine chart format.");
+                    }
+                } catch (err) {
+                    alert(`Error in JSON! Aborting.\n\n${err}`);
+                    return;
+                }
+
+                const outNotes = [];
+
+                function flush() {
+                    outNotes.sort((a, b) => a[0] - b[0]);
+
+                    if (tag[0] === "aysop") {
+                        return outNotes.map(n => `${n[0]}${n[1]}`).join("\n");
+                    } else {
+                        return outNotes.map(a => a.map(num => `{${num}}`).join(": ")).join("\n");
+                    }
+                }
+
+                parsed.song.notes.forEach(section => {
+                    const hitOffset = section.mustHitSection * 4;
+                    section.sectionNotes.forEach(n => {
+                        const time = (n[0] / 1000).toFixed(decimals);
+                        const lane = ((n[1] + hitOffset) % 8) + 1;
+
+                        if (tag[0] !== "aysop") {
+                            outNotes.push([time, lane, n[2]]);
+                        } else {
+                            outNotes.push([time, lane]);
+                        }
+                    });
+                });
+
+                const blob = new Blob([flush()]);
+                const dl = document.createElement("a");
+                dl.download = `export-${tag[0]}-${parsed.song.song}.${tag[1]}`;
+                dl.href = URL.createObjectURL(blob);
+                dl.click();
+                dl.remove();
+
+                alert(`Done! Conversion took ${Date.now() - startTime} ms.`);
+            };
+
+            reader.readAsText(file);
+        }
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const input = document.getElementById("input");
+            input.addEventListener("change", () => {
+                const file = input.files[0];
+                document.getElementById("file-name").textContent =
+                    file ? file.name : "No file selected.";
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h2>FNF → AYS Converter</h2>
+    <p style="opacity:0.7; font-size:0.9em;">Original by Nael2XD, improved by IAmCyklus</p>
+
+    <div id="container">
+        <div id="setup">
+            <h3>Select your Psych Engine chart file</h3>
+
+            <label class="file-button" for="input">Choose File</label>
+            <input type="file" id="input" accept="application/json">
+            <div id="file-name">No file selected.</div>
+
+            <h3>Select conversion type</h3>
+            <select id="conversion">
+                <option value="aysop.txt">AYS (Optimized) [.txt]</option>
+                <option value="ayssss.txt">AYS (Scratch's Smooth Saturday) [.txt]</option>
+            </select>
+
+
+            <button onclick="convert()">Start</button>
+        </div>
+
+        <div id="options">
+            <h4>Note Time Decimal</h4>
+            <input id="decimal-digit" value="5" min="0" max="10" type="number">
+        </div>
+    </div>
+</body>
+</html>
